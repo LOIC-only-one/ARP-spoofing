@@ -1,9 +1,10 @@
 from scapy.all import sr1, IP, ICMP, Ether, ARP
 from sys import *
+import ipaddress
 
 def decouverte_active(host):
     try:
-        response = sr1(IP(dst=host) / ICMP(), timeout=3, iface=None)
+        response = sr1(IP(dst=host) / ICMP(), timeout=3, iface="Wi-Fi")
         if response:
             return f"L'hote {host} est joignable !"
         else:
@@ -22,14 +23,18 @@ def decouverte_passive(host):
         return f"Erreur lors de la découverte de l'hote {host}: {str(erreur)}"
 
 def decouverte_reseau(network, mask):
-    try:
-        range = f'{network}/{mask}'
-        # Explorer tous les hotes dans la plage spécifiée
-        # Faire une boucle pour tous decouvrir
-    except Exception as erreur:
-        return f"Erreur lors de la découverte du réseau {network}/{mask}: {str(erreur)}"
+    results = []
+    network_obj = ipaddress.IPv4Network(f'{network}/{mask}', strict=False).hosts()
+    for ip in network_obj:
+        result = decouverte_active(str(ip))
+        results.append(result)
+    return results
+
+decouverte_reseau('192.168.1.0',24)
 
 def exporter_resultat(data, fichier):
     with open(fichier, 'w') as file:
         file.write(data + '\n')
-        file.write("###########################################")
+        file.write(f"###########################################")
+
+
